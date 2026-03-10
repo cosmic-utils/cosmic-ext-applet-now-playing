@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::path::PathBuf;
 use std::time::Duration;
 
@@ -20,6 +19,7 @@ use cosmic::widget::{button, button::Catalog, column, icon, text, Row};
 use cosmic::{Action, Element, Task};
 use mpris::{Event as MprisEvent, PlayerFinder};
 
+use crate::album_color::dominant_album_color;
 use crate::fl;
 use crate::metadata::{now_playing_from_player, now_playing_snapshot, NowPlayingData};
 use crate::player::{album_art_path_from_metadata, playback_state_from_player, with_active_player};
@@ -81,7 +81,7 @@ impl cosmic::Application for Window {
             now_playing_title: initial.title,
             now_playing_artist: initial.artist,
             playback_state: initial.state,
-            album_color: dominant_album_color(initial.album_art_path.as_ref()),
+            album_color: dominant_album_color(initial.album_art_path.as_deref()),
             album_art_path: initial.album_art_path,
             has_active_media: initial.has_active_media,
             ..Default::default()
@@ -130,7 +130,7 @@ impl cosmic::Application for Window {
                 self.now_playing_title = data.title;
                 self.now_playing_artist = data.artist;
                 self.playback_state = data.state;
-                self.album_color = dominant_album_color(data.album_art_path.as_ref());
+                self.album_color = dominant_album_color(data.album_art_path.as_deref());
                 self.album_art_path = data.album_art_path;
                 self.has_active_media = data.has_active_media;
             }
@@ -490,38 +490,4 @@ fn shift_color(color: Color, amount: f32) -> Color {
         b: adjust(color.b),
         a: color.a,
     }
-}
-
-fn dominant_album_color(path: Option<&PathBuf>) -> Option<Color> {
-    let path = path?;
-    let image = image::open(path).ok()?.to_rgba8();
-    let thumb = image::imageops::thumbnail(&image, 64, 64);
-
-    let mut buckets: HashMap<u16, (u32, u64, u64, u64)> = HashMap::new();
-    for pixel in thumb.pixels() {
-        let [r, g, b, a] = pixel.0;
-        if a < 24 {
-            continue;
-        }
-
-        // Group into coarse RGB buckets so we pick the most frequent color family.
-        let key = ((u16::from(r >> 4)) << 8) | ((u16::from(g >> 4)) << 4) | u16::from(b >> 4);
-        let entry = buckets.entry(key).or_insert((0, 0, 0, 0));
-        entry.0 += 1;
-        entry.1 += u64::from(r);
-        entry.2 += u64::from(g);
-        entry.3 += u64::from(b);
-    }
-
-    let (_, (count, sum_r, sum_g, sum_b)) = buckets
-        .into_iter()
-        .max_by_key(|(_, (count, ..))| *count)?;
-    if count == 0 {
-        return None;
-    }
-
-    let r = (sum_r / u64::from(count)) as u8;
-    let g = (sum_g / u64::from(count)) as u8;
-    let b = (sum_b / u64::from(count)) as u8;
-    Some(Color::from_rgb8(r, g, b))
 }

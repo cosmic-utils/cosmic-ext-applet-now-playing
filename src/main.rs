@@ -1,3 +1,4 @@
+mod album_color;
 mod i18n;
 mod metadata;
 mod player;
