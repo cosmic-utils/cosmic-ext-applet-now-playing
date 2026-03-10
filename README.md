@@ -13,27 +13,34 @@ It displays:
 ## Build
 
 ```bash
-cargo build --release
+just build-release
 ```
 
 ## Run (Local)
 
 ```bash
-cargo run
+just run
 ```
 
 ## Install (System-Wide)
 
-1. Build release binary.
-2. Copy binary to `/usr/bin`.
-3. Install desktop entry as a COSMIC applet.
-
-Example:
+Build and install using the provided `just` recipes:
 
 ```bash
-cargo build --release
-sudo cp target/release/cosmic-ext-applet-now-playing /usr/bin/cosmic-ext-applet-now-playing
-sudo cp resources/app.desktop /usr/share/applications/cosmic-ext-applet-now-playing.desktop
+just build-release
+sudo just install
+```
+
+To rebuild and reinstall after code changes:
+
+```bash
+just build-release && sudo just install
+```
+
+For a fully clean rebuild:
+
+```bash
+just clean && just build-release && sudo just install
 ```
 
 Then add the applet from COSMIC panel settings.

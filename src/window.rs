@@ -20,6 +20,7 @@ use cosmic::widget::{button, button::Catalog, column, icon, text, Row};
 use cosmic::{Action, Element, Task};
 use mpris::{Event as MprisEvent, PlayerFinder};
 
+use crate::fl;
 use crate::metadata::{now_playing_from_player, now_playing_snapshot, NowPlayingData};
 use crate::player::{album_art_path_from_metadata, playback_state_from_player, with_active_player};
 
@@ -35,6 +36,7 @@ pub struct Window {
     playback_state: PlaybackState,
     album_art_path: Option<PathBuf>,
     album_color: Option<Color>,
+    has_active_media: bool,
 }
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
@@ -81,6 +83,7 @@ impl cosmic::Application for Window {
             playback_state: initial.state,
             album_color: dominant_album_color(initial.album_art_path.as_ref()),
             album_art_path: initial.album_art_path,
+            has_active_media: initial.has_active_media,
             ..Default::default()
         };
 
@@ -129,6 +132,7 @@ impl cosmic::Application for Window {
                 self.playback_state = data.state;
                 self.album_color = dominant_album_color(data.album_art_path.as_ref());
                 self.album_art_path = data.album_art_path;
+                self.has_active_media = data.has_active_media;
             }
             Message::PreviousTrack => {
                 with_active_player(|player| {
@@ -171,19 +175,20 @@ impl cosmic::Application for Window {
                             let player = match finder.find_active() {
                                 Ok(player) => player,
                                 Err(_) => {
-                                    if last_sent != "Nothing playing"
+                                    if last_sent != fl!("nothing-playing")
                                         || last_state != PlaybackState::Stopped
                                     {
-                                        last_sent = "Nothing playing".to_string();
+                                        last_sent = fl!("nothing-playing");
                                         last_state = PlaybackState::Stopped;
                                         last_art = None;
                                         while output
                                             .try_send(Message::NowPlayingChanged(NowPlayingData {
                                                 text: last_sent.clone(),
-                                                title: "Nothing playing".to_string(),
+                                                title: fl!("nothing-playing"),
                                                 artist: String::new(),
                                                 state: last_state,
                                                 album_art_path: None,
+                                                has_active_media: false,
                                             }))
                                             .is_err()
                                         {
@@ -225,11 +230,15 @@ impl cosmic::Application for Window {
                             for event in &mut events {
                                 match event {
                                     Ok(MprisEvent::TrackChanged(metadata)) => {
-                                        let title = metadata.title().unwrap_or("Unknown");
+                                        let title = metadata
+                                            .title()
+                                            .map(ToOwned::to_owned)
+                                            .unwrap_or_else(|| fl!("unknown-title"));
                                         let artist = metadata
                                             .artists()
                                             .and_then(|a| a.first().copied())
-                                            .unwrap_or("Unknown");
+                                            .map(ToOwned::to_owned)
+                                            .unwrap_or_else(|| fl!("unknown-artist"));
                                         let text = format!("{} - {}", title, artist);
                                         let state = playback_state_from_player(&player);
                                         let art = album_art_path_from_metadata(&metadata);
@@ -242,10 +251,11 @@ impl cosmic::Application for Window {
                                                 .try_send(Message::NowPlayingChanged(
                                                     NowPlayingData {
                                                         text: text.clone(),
-                                                        title: title.to_string(),
-                                                        artist: artist.to_string(),
+                                                        title: title.clone(),
+                                                        artist: artist.clone(),
                                                         state,
                                                         album_art_path: art.clone(),
+                                                        has_active_media: true,
                                                     },
                                                 ))
                                                 .is_err()
@@ -422,9 +432,7 @@ impl cosmic::Application for Window {
 
 impl Window {
     fn has_active_media(&self) -> bool {
-        !(self.playback_state == PlaybackState::Stopped
-            && self.now_playing_title == "Nothing playing"
-            && self.now_playing_artist.is_empty())
+        self.has_active_media
     }
 }
 
