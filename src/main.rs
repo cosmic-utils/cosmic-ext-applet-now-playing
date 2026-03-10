@@ -1,4 +1,4 @@
-mod core;
+mod i18n;
 mod metadata;
 mod player;
 mod window;
@@ -6,8 +6,9 @@ mod window;
 use crate::window::Window;
 
 fn main() -> cosmic::iced::Result {
-    // Trigger localization initialization before UI starts.
-    let _ = &*core::localization::LANGUAGE_LOADER;
+    let requested_languages = i18n_embed::DesktopLanguageRequester::requested_languages();
+    i18n::init(&requested_languages);
+
     cosmic::applet::run::<Window>(())?;
 
     Ok(())
