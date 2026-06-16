@@ -3,8 +3,10 @@ use std::time::Duration;
 
 use cosmic::app::Core;
 use cosmic::iced::{
+    advanced::text::{Ellipsize, EllipsizeHeightLimit, Wrapping},
     platform_specific::shell::commands::popup::{destroy_popup, get_popup},
     stream::channel,
+    window,
     window::Id,
     Background,
     Color,
@@ -13,9 +15,7 @@ use cosmic::iced::{
     Limits,
     Subscription,
 };
-use cosmic::iced_core::text::{Ellipsize, EllipsizeHeightLimit, Wrapping};
-use cosmic::iced_runtime::core::window;
-use cosmic::widget::{button, button::Catalog, column, icon, text, Row};
+use cosmic::widget::{button, button::Catalog, icon, text, Column, Row};
 use cosmic::{Action, Element, Task};
 use mpris::{Event as MprisEvent, PlayerFinder};
 
@@ -401,7 +401,7 @@ impl cosmic::Application for Window {
                     .on_press(Message::NextTrack),
             );
 
-        let media_info = column()
+        let media_info = Column::new()
             .spacing(2)
             .align_x(cosmic::iced::Alignment::Center)
             .push(
@@ -419,7 +419,7 @@ impl cosmic::Application for Window {
                     .wrapping(Wrapping::WordOrGlyph),
             );
 
-        let content_list = column()
+        let content_list = Column::new()
             .padding(12)
             .spacing(12)
             .align_x(cosmic::iced::Alignment::Center)
