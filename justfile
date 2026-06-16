@@ -115,3 +115,9 @@ vendor:
 vendor-extract:
     rm -rf vendor
     tar pxf vendor.tar
+
+flatpak-build:
+    flatpak-builder --force-clean build-dir flatpak/com.github.DiegoMMR.CosmicExtAppletNowPlaying.json
+
+flatpak-install:
+    flatpak-builder --user --install --force-clean build-dir flatpak/com.github.DiegoMMR.CosmicExtAppletNowPlaying.json

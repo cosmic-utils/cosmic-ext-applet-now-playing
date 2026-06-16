@@ -9,7 +9,7 @@
   <url type="homepage">https://github.com/cosmic-utils/cosmic-ext-applet-now-playing</url>
   <url type="bugtracker">https://github.com/cosmic-utils/cosmic-ext-applet-now-playing/issues</url>
   <name>COSMIC Now Playing</name>
-  <summary>Shows active MPRIS media in the COSMIC panel</summary>
+  <summary>Shows active media in the COSMIC panel</summary>
   <description>
     <p>A COSMIC panel applet that displays current track title and artist from active MPRIS players, with a popup for album art and media controls.</p>
   </description>
