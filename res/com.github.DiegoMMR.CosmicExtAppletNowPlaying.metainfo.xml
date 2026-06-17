@@ -15,8 +15,10 @@
   </description>
   <launchable type="desktop-id">com.github.DiegoMMR.CosmicExtAppletNowPlaying.desktop</launchable>
   <icon type="stock">com.github.DiegoMMR.CosmicExtAppletNowPlaying</icon>
-  <screenshots>
-  </screenshots>
+  <categories>
+    <category>AudioVideo</category>
+    <category>Utility</category>
+  </categories>
   <provides>
     <binaries>
       <binary>cosmic-ext-applet-now-playing</binary>
