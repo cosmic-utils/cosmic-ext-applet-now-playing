@@ -20,6 +20,7 @@
     <category>Utility</category>
   </categories>
   <provides>
+    <id>com.system76.CosmicApplet</id>
     <binaries>
       <binary>cosmic-ext-applet-now-playing</binary>
     </binaries>
