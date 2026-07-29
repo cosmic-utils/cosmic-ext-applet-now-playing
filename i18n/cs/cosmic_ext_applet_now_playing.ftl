@@ -1,0 +1,11 @@
+now-playing = Nyní hraje
+nothing-playing = Nic nehraje
+unknown-title = Neznámý
+unknown-artist = Neznámý
+previous-track = Předchozí skladba
+toggle-play-pause = Přehrát nebo pozastavit
+next-track = Následující skladba
+use-album-colors = Používat barvy alba
+settings = Nastavení
+back = Zpět
+select-player = Vybrat přehrávač

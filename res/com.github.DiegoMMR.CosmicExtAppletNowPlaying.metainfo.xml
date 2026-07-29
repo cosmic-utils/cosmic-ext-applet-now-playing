@@ -9,18 +9,23 @@
   <url type="homepage">https://github.com/cosmic-utils/cosmic-ext-applet-now-playing</url>
   <url type="bugtracker">https://github.com/cosmic-utils/cosmic-ext-applet-now-playing/issues</url>
   <name>Now Playing</name>
+  <name xml:lang="cs">Nyní hraje</name>
   <summary>Shows active media in the COSMIC panel</summary>
+  <summary xml:lang="cs">Zobrazuje aktivní média v panelu COSMIC</summary>
   <description>
     <p>A COSMIC panel applet that displays current track title and artist from active MPRIS players, with a popup for album art and media controls.</p>
+    <p xml:lang="cs">Applet panelu COSMIC, který zobrazuje název právě přehrávané skladby a interpreta z aktivních přehrávačů MPRIS, s vyskakovacím oknem obsahujícím obal alba a ovládací prvky médií.</p>
   </description>
   <screenshots>
     <screenshot type="default">
       <image type="source">https://raw.githubusercontent.com/cosmic-utils/cosmic-ext-applet-now-playing/main/res/screenshot-2.png</image>
       <caption>Album artwork, track information, and playback controls</caption>
+      <caption xml:lang="cs">Obal alba, informace o skladbě a ovládací prvky přehrávání</caption>
     </screenshot>
     <screenshot>
       <image type="source">https://raw.githubusercontent.com/cosmic-utils/cosmic-ext-applet-now-playing/main/res/screenshot-1.png</image>
       <caption>Current track information in the COSMIC panel</caption>
+      <caption xml:lang="cs">Informace o právě přehrávané skladbě v panelu COSMIC</caption>
     </screenshot>
   </screenshots>
   <releases>

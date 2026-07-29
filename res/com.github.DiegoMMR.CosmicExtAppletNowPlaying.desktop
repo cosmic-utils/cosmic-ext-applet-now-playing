@@ -1,5 +1,6 @@
 [Desktop Entry]
 Name=Now Playing
+Name[cs]=Nyní hraje
 Exec=cosmic-ext-applet-now-playing
 Terminal=false
 Type=Application
@@ -7,6 +8,7 @@ StartupNotify=true
 Icon=com.github.DiegoMMR.CosmicExtAppletNowPlaying
 Categories=AudioVideo;Utility;
 Keywords=Music;Media;Now Playing;
+Keywords[cs]=Hudba;Média;Nyní hraje;
 NoDisplay=true
 X-CosmicApplet=true
 X-CosmicHoverPopup=Auto
