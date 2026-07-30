@@ -18,21 +18,37 @@ pub fn panel<'a>(core: &Core, model: &'a AppModel) -> Element<'a, Message> {
 
     let size = core.applet.suggested_size(true);
     let padding = core.applet.suggested_padding(true);
-    let transport = mouse_area(icon::from_name(transport_icon(model)).size(size.0))
-        .on_press(Message::TogglePlayPause);
-
-    let content = Row::new()
+    let mut content = Row::new()
         .spacing(padding.0)
         .padding([0, padding.0])
-        .align_y(cosmic::iced::alignment::Vertical::Center)
-        .push(transport)
-        .push(
-            text(model.now_playing.text.as_str())
-                .size(size.0.saturating_sub(1))
-                .width(Length::Fixed(260.0))
-                .wrapping(Wrapping::None)
-                .ellipsize(Ellipsize::End(EllipsizeHeightLimit::Lines(1))),
+        .align_y(cosmic::iced::alignment::Vertical::Center);
+
+    if model.settings.previous_control_enabled {
+        content = content.push(
+            mouse_area(icon::from_name("media-skip-backward-symbolic").size(size.0))
+                .on_press(Message::PreviousTrack),
         );
+    }
+    if model.settings.play_control_enabled {
+        content = content.push(
+            mouse_area(icon::from_name(transport_icon(model)).size(size.0))
+                .on_press(Message::TogglePlayPause),
+        );
+    }
+    if model.settings.next_control_enabled {
+        content = content.push(
+            mouse_area(icon::from_name("media-skip-forward-symbolic").size(size.0))
+                .on_press(Message::NextTrack),
+        );
+    }
+
+    content = content.push(
+        text(model.now_playing.text.as_str())
+            .size(size.0.saturating_sub(1))
+            .width(Length::Fixed(260.0))
+            .wrapping(Wrapping::None)
+            .ellipsize(Ellipsize::End(EllipsizeHeightLimit::Lines(1))),
+    );
 
     let album_color = model.album_color;
     let button = button::custom(content)
@@ -243,6 +259,21 @@ fn settings_page<'a>(core: &Core, model: &'a AppModel) -> Element<'a, Message> {
         .push(settings::item(
             fl!("use-album-colors"),
             toggler(model.settings.album_color_enabled).on_toggle(Message::SetAlbumColorEnabled),
+        ))
+        .push(settings::item(
+            fl!("previous-track"),
+            toggler(model.settings.previous_control_enabled)
+                .on_toggle(Message::SetPreviousControlEnabled),
+        ))
+        .push(settings::item(
+            fl!("toggle-play-pause"),
+            toggler(model.settings.play_control_enabled)
+                .on_toggle(Message::SetPlayControlEnabled),
+        ))
+        .push(settings::item(
+            fl!("next-track"),
+            toggler(model.settings.next_control_enabled)
+                .on_toggle(Message::SetNextControlEnabled),
         ))
         .into()
 }

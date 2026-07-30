@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented in this file.
 
+## Unreleased
+
+### Added
+
+- Configurable Previous, Play/Pause, and Next controls in the panel.
+
 ## [0.2.0] - 2026-07-28
 
 ### Added

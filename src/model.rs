@@ -126,6 +126,18 @@ impl AppModel {
         self.refresh_album_color();
     }
 
+    pub fn set_previous_control_enabled(&mut self, enabled: bool) {
+        self.settings.previous_control_enabled = enabled;
+    }
+
+    pub fn set_play_control_enabled(&mut self, enabled: bool) {
+        self.settings.play_control_enabled = enabled;
+    }
+
+    pub fn set_next_control_enabled(&mut self, enabled: bool) {
+        self.settings.next_control_enabled = enabled;
+    }
+
     #[must_use]
     pub fn has_active_media(&self) -> bool {
         self.now_playing.has_usable_metadata

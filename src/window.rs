@@ -22,6 +22,9 @@ pub enum Message {
     ShowPlayerList,
     ShowSettings,
     SetAlbumColorEnabled(bool),
+    SetPreviousControlEnabled(bool),
+    SetPlayControlEnabled(bool),
+    SetNextControlEnabled(bool),
     SelectPlayer(String),
     PopupClosed(Id),
     MediaChanged(MediaSnapshot),
@@ -68,9 +71,19 @@ impl cosmic::Application for Window {
             Message::ShowSettings => self.model.set_popup_page(PopupPage::Settings),
             Message::SetAlbumColorEnabled(enabled) => {
                 self.model.set_album_color_enabled(enabled);
-                if let Err(error) = settings::save(self.model.settings) {
-                    eprintln!("unable to save settings: {error}");
-                }
+                self.save_settings();
+            }
+            Message::SetPreviousControlEnabled(enabled) => {
+                self.model.set_previous_control_enabled(enabled);
+                self.save_settings();
+            }
+            Message::SetPlayControlEnabled(enabled) => {
+                self.model.set_play_control_enabled(enabled);
+                self.save_settings();
+            }
+            Message::SetNextControlEnabled(enabled) => {
+                self.model.set_next_control_enabled(enabled);
+                self.save_settings();
             }
             Message::SelectPlayer(id) => {
                 self.model.select_player(id);
@@ -153,6 +166,12 @@ impl Window {
     fn run_media_command(&self, command: MediaCommand) {
         if let Err(error) = media::run_command(self.model.selected_player.as_deref(), command) {
             eprintln!("{error}");
+        }
+    }
+
+    fn save_settings(&self) {
+        if let Err(error) = settings::save(self.model.settings) {
+            eprintln!("unable to save settings: {error}");
         }
     }
 }
