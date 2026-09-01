@@ -6,6 +6,7 @@ license = "GPL-3.0"
 rust-version = "1.93"
 
 [dependencies]
+dbus = "0.9.12"
 i18n-embed-fl = "0.10.1"
 rust-embed = "8.12.0"
 mpris = "2.1.0"

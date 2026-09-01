@@ -924,6 +924,7 @@ dependencies = [
 name = "cosmic-ext-applet-now-playing"
 version = "0.2.0"
 dependencies = [
+ "dbus",
  "dirs",
  "i18n-embed",
  "i18n-embed-fl",
