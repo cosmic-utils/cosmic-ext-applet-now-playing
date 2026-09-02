@@ -49,6 +49,16 @@
     </screenshot>
   </screenshots>
   <releases>
+    <release version="0.2.1" date="2026-09-01">
+      <description>
+        <ul>
+          <li>Added configurable Previous, Play/Pause, and Next controls to the panel</li>
+          <li>Improved playback updates using MPRIS D-Bus events</li>
+          <li>Added Czech localization</li>
+          <li>Expanded localized app metadata</li>
+        </ul>
+      </description>
+    </release>
     <release version="0.2.0" date="2026-07-28">
       <description>
         <ul>
