@@ -12,12 +12,14 @@
   <name xml:lang="cs">Nyní hraje</name>
   <name xml:lang="es">Reproduciendo ahora</name>
   <name xml:lang="nl">Nu afgespeeld</name>
+  <name xml:lang="cs">Teraz Odtwarzane</name>
   <name xml:lang="sv">Nu spelas</name>
   <name xml:lang="uk">Відтворюється</name>
   <summary>Shows active media in the COSMIC panel</summary>
   <summary xml:lang="cs">Zobrazuje aktivní média v panelu COSMIC</summary>
   <summary xml:lang="es">Muestra los medios activos en el panel COSMIC</summary>
   <summary xml:lang="nl">Toont actieve media in het COSMIC-paneel</summary>
+  <summary xml:lang="pl">Pokazuje aktywne media w panelu COSMIC</summary>
   <summary xml:lang="sv">Visar aktiva medier i COSMIC-panelen</summary>
   <summary xml:lang="uk">Відображає активні медіа на панелі COSMIC</summary>
   <description>
@@ -25,6 +27,7 @@
     <p xml:lang="cs">Applet panelu COSMIC, který zobrazuje název právě přehrávané skladby a interpreta z aktivních přehrávačů MPRIS, s vyskakovacím oknem obsahujícím obal alba a ovládací prvky médií.</p>
     <p xml:lang="es">Un applet del panel COSMIC que muestra el título y el artista de la pista actual de los reproductores MPRIS activos, con una ventana emergente para la carátula del álbum y los controles multimedia.</p>
     <p xml:lang="nl">Een applet voor het COSMIC-paneel die de titel en artiest van het huidige nummer van actieve MPRIS-spelers toont, met een pop-up voor de albumhoes en mediabediening.</p>
+    <p xml:lang="pl">Aplet dla panelu COSMIC, któty pokazuje tytuł i artystę obecnego utworu z odtwarzacza MPRIS, a w wyskakującym oknie okładkę albumu i sterowanie mediami.</p>
     <p xml:lang="sv">Ett panelminiprogram för COSMIC som visar den aktuella låtens titel och artist från aktiva MPRIS-spelare, med ett popup-fönster för albumomslag och mediekontroller.</p>
     <p xml:lang="uk">Аплет панелі COSMIC, який відображає назву поточної композиції та виконавця з активних програвачів MPRIS, зі спливним вікном з обкладинкою альбому та елементами керування відтворенням.</p>
   </description>
@@ -35,6 +38,7 @@
       <caption xml:lang="cs">Obal alba, informace o skladbě a ovládací prvky přehrávání</caption>
       <caption xml:lang="es">Carátula del álbum, información de la pista y controles de reproducción</caption>
       <caption xml:lang="nl">Albumhoes, nummerinformatie en afspeelknoppen</caption>
+      <caption xml:lang="pl">Okładka albumu, informacje o ścieżce i sterowanie odtwarzaniem</caption>
       <caption xml:lang="sv">Albumomslag, låtinformation och uppspelningskontroller</caption>
       <caption xml:lang="uk">Обкладинка альбому, інформація про композицію та елементи керування відтворенням</caption>
     </screenshot>
@@ -44,6 +48,7 @@
       <caption xml:lang="cs">Informace o právě přehrávané skladbě v panelu COSMIC</caption>
       <caption xml:lang="es">Información de la pista actual en el panel COSMIC</caption>
       <caption xml:lang="nl">Informatie over het huidige nummer in het COSMIC-paneel</caption>
+      <caption xml:lang="pl">Informacje o obecnej ścieżce w panelu COSMIC</caption>
       <caption xml:lang="sv">Information om aktuell låt i COSMIC-panelen</caption>
       <caption xml:lang="uk">Інформація про поточну композицію на панелі COSMIC</caption>
     </screenshot>
