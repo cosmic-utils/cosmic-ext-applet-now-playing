@@ -1,6 +1,7 @@
 [Desktop Entry]
 Name=Now Playing
 Name[cs]=Nyní hraje
+Name[pl]=Teraz Odtwarzane
 Exec=cosmic-ext-applet-now-playing
 Terminal=false
 Type=Application
@@ -9,6 +10,7 @@ Icon=com.github.DiegoMMR.CosmicExtAppletNowPlaying
 Categories=AudioVideo;Utility;
 Keywords=Music;Media;Now Playing;
 Keywords[cs]=Hudba;Média;Nyní hraje;
+Keywords[pl]=Muzyka;Media;Teraz Grane;Teraz Odtwarzane;
 NoDisplay=true
 X-CosmicApplet=true
 X-CosmicHoverPopup=Auto
