@@ -1,10 +1,14 @@
+use std::thread;
+
 use cosmic::app::Core;
+use cosmic::iced::futures::channel::oneshot;
 use cosmic::iced::{Limits, Subscription, window, window::Id};
 use cosmic::surface::action::{app_popup, destroy_popup};
 use cosmic::{Action, Element, Task};
 
+use crate::album_art::{self, LoadedArt};
 use crate::media::{self, MediaCommand};
-use crate::model::{AppModel, MediaSnapshot, PopupPage};
+use crate::model::{AppModel, ArtKey, MediaSnapshot, PopupPage};
 use crate::{settings, ui};
 
 const ID: &str = "com.github.DiegoMMR.CosmicExtAppletNowPlaying";
@@ -28,6 +32,7 @@ pub enum Message {
     SelectPlayer(String),
     PopupClosed(Id),
     MediaChanged(MediaSnapshot),
+    AlbumArtLoaded(ArtKey, Result<LoadedArt, String>),
     PreviousTrack,
     TogglePlayPause,
     NextTrack,
@@ -49,14 +54,13 @@ impl cosmic::Application for Window {
 
     fn init(core: Core, _flags: Self::Flags) -> (Self, Task<Action<Self::Message>>) {
         let model = AppModel::new(settings::load(), media::initial_snapshot());
-        (
-            Self {
-                core,
-                popup: None,
-                model,
-            },
-            Task::none(),
-        )
+        let mut window = Self {
+            core,
+            popup: None,
+            model,
+        };
+        let artwork = window.artwork_task();
+        (window, artwork)
     }
 
     fn on_close_requested(&self, id: window::Id) -> Option<Message> {
@@ -64,6 +68,26 @@ impl cosmic::Application for Window {
     }
 
     fn update(&mut self, message: Message) -> Task<Action<Self::Message>> {
+        // Any message may change the current track, so check the cover after each one.
+        let task = self.handle_message(message);
+        Task::batch([task, self.artwork_task()])
+    }
+
+    fn subscription(&self) -> Subscription<Self::Message> {
+        media::subscription().map(Message::MediaChanged)
+    }
+
+    fn view(&self) -> Element<'_, Message> {
+        ui::panel(&self.core, &self.model)
+    }
+
+    fn view_window(&self, _id: Id) -> Element<'_, Message> {
+        ui::popup(&self.core, &self.model)
+    }
+}
+
+impl Window {
+    fn handle_message(&mut self, message: Message) -> Task<Action<Message>> {
         match message {
             Message::TogglePopup => return self.toggle_popup(),
             Message::ShowMain => self.model.set_popup_page(PopupPage::Main),
@@ -104,6 +128,15 @@ impl cosmic::Application for Window {
                     return surface_task(destroy_popup(popup));
                 }
             }
+            Message::AlbumArtLoaded(key, result) => {
+                if let Err(error) = &result {
+                    eprintln!(
+                        "unable to load album art from {}: {error}",
+                        album_art::redact(&key.url)
+                    );
+                }
+                self.model.art_loaded(key, result);
+            }
             Message::PreviousTrack => self.run_media_command(MediaCommand::Previous),
             Message::TogglePlayPause => {
                 self.run_media_command(MediaCommand::TogglePlayPause);
@@ -114,20 +147,33 @@ impl cosmic::Application for Window {
         Task::none()
     }
 
-    fn subscription(&self) -> Subscription<Self::Message> {
-        media::subscription().map(Message::MediaChanged)
+    /// Loads the current cover on a separate thread, so slow disks or
+    /// networks never block the panel.
+    fn artwork_task(&mut self) -> Task<Action<Message>> {
+        let Some(key) = self.model.take_artwork_request() else {
+            return Task::none();
+        };
+
+        cosmic::task::future(async move {
+            let (sender, receiver) = oneshot::channel();
+            let url = key.url.clone();
+            let spawned = thread::Builder::new()
+                .name("album-art".to_owned())
+                .spawn(move || {
+                    let _ = sender.send(album_art::load(&url));
+                });
+
+            // Always answer, so the cover is never left pending.
+            let result = match spawned {
+                Ok(_) => receiver
+                    .await
+                    .unwrap_or_else(|_| Err("album art loader stopped unexpectedly".to_owned())),
+                Err(error) => Err(format!("unable to start album art loader: {error}")),
+            };
+            Message::AlbumArtLoaded(key, result)
+        })
     }
 
-    fn view(&self) -> Element<'_, Message> {
-        ui::panel(&self.core, &self.model)
-    }
-
-    fn view_window(&self, _id: Id) -> Element<'_, Message> {
-        ui::popup(&self.core, &self.model)
-    }
-}
-
-impl Window {
     fn toggle_popup(&mut self) -> Task<Action<Message>> {
         if let Some(popup) = self.popup.take() {
             self.model.set_popup_page(PopupPage::Main);

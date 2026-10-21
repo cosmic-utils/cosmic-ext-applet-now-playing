@@ -2,6 +2,18 @@
 
 All notable changes to this project are documented in this file.
 
+## [Unreleased]
+
+### Fixed
+
+- Album art now shows for players that publish remote cover URLs, such as Spotify (#12).
+- Album art also loads from inline `data:` URLs and from local files without an extension.
+- Covers are loaded in the background, so slow disks or networks no longer block the panel.
+
+### Changed
+
+- The Flatpak can now access the network and `/tmp` (read-only) to load album art.
+
 ## [0.2.1] - 2026-09-01
 
 ### Added

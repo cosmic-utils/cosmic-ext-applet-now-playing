@@ -8,9 +8,11 @@
   "finish-args": [
     "--socket=wayland",
     "--socket=session-bus",
+    "--share=network",
     "--talk-name=org.mpris.MediaPlayer2.*",
     "--filesystem=xdg-cache:ro",
     "--filesystem=~/.var/app:ro",
+    "--filesystem=/tmp:ro",
     "--filesystem=xdg-config/cosmic:rw"
   ],
   "build-options": {

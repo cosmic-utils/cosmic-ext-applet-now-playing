@@ -1,6 +1,5 @@
-use std::path::Path;
-
 use cosmic::iced::Color;
+use image::DynamicImage;
 
 #[allow(clippy::float_cmp)]
 fn rgb_to_hsl(r: u8, g: u8, b: u8) -> (f32, f32, f32) {
@@ -94,9 +93,8 @@ fn normalize_album_color(color: Color) -> Color {
     )
 }
 
-pub fn dominant_album_color(path: &Path) -> Option<Color> {
-    let image = image::open(path).ok()?.to_rgba8();
-    let thumb = image::imageops::thumbnail(&image, 32, 32);
+pub fn dominant_album_color(image: &DynamicImage) -> Color {
+    let thumb = image.thumbnail(32, 32).into_rgba8();
 
     let mut sum_r = 0.0f32;
     let mut sum_g = 0.0f32;
@@ -132,13 +130,13 @@ pub fn dominant_album_color(path: &Path) -> Option<Color> {
     }
 
     if total_weight <= f32::EPSILON {
-        return Some(Color::WHITE);
+        return Color::WHITE;
     }
 
     let r = byte_value_to_u8(sum_r / total_weight);
     let g = byte_value_to_u8(sum_g / total_weight);
     let b = byte_value_to_u8(sum_b / total_weight);
-    Some(normalize_album_color(Color::from_rgb8(r, g, b)))
+    normalize_album_color(Color::from_rgb8(r, g, b))
 }
 
 fn channel_to_u8(value: f32) -> u8 {
@@ -154,13 +152,10 @@ fn byte_value_to_u8(value: f32) -> u8 {
 mod tests {
     use super::*;
     use image::{Rgba, RgbaImage};
-    use tempfile::tempdir;
 
     fn color_from_image(pixel: Rgba<u8>) -> Color {
-        let directory = tempdir().unwrap();
-        let path = directory.path().join("cover.png");
-        RgbaImage::from_pixel(4, 4, pixel).save(&path).unwrap();
-        dominant_album_color(&path).unwrap()
+        let image = DynamicImage::ImageRgba8(RgbaImage::from_pixel(4, 4, pixel));
+        dominant_album_color(&image)
     }
 
     #[test]

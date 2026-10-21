@@ -13,6 +13,8 @@ mpris = "2.1.0"
 image = { version = "0.25.10", default-features = false, features = ["jpeg", "png", "webp"] }
 dirs = "6.0.0"
 url = "2.5.8"
+ureq = { version = "3.4", default-features = false, features = ["rustls"] }
+base64 = "0.22"
 
 [dependencies.libcosmic]
 git = "https://github.com/pop-os/libcosmic.git"

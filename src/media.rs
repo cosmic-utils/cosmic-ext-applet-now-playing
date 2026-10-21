@@ -1,4 +1,3 @@
-use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::thread;
@@ -12,7 +11,6 @@ use dbus::blocking::Connection;
 use dbus::blocking::stdintf::org_freedesktop_dbus::PropertiesPropertiesChanged;
 use dbus::message::MatchRule;
 use mpris::{PlaybackStatus, PlayerFinder};
-use url::Url;
 
 use crate::fl;
 use crate::model::{MediaSnapshot, NowPlayingData, PlaybackState, PlayerInfo};
@@ -310,7 +308,11 @@ fn now_playing(player: &mpris::Player) -> NowPlayingData {
         title,
         artist,
         state,
-        album_art_path: metadata.art_url().and_then(file_url_to_path),
+        art_url: metadata
+            .art_url()
+            .map(str::trim)
+            .filter(|url| !url.is_empty())
+            .map(ToOwned::to_owned),
         has_usable_metadata: true,
     }
 }
@@ -324,42 +326,14 @@ fn playback_state(player: &mpris::Player) -> PlaybackState {
     }
 }
 
-fn file_url_to_path(value: &str) -> Option<PathBuf> {
-    if !has_valid_percent_encoding(value) {
-        return None;
-    }
-
-    Url::parse(value).ok()?.to_file_path().ok()
-}
-
-fn has_valid_percent_encoding(value: &str) -> bool {
-    let bytes = value.as_bytes();
-    let mut index = 0;
-    while index < bytes.len() {
-        if bytes[index] == b'%' {
-            if index + 2 >= bytes.len()
-                || !bytes[index + 1].is_ascii_hexdigit()
-                || !bytes[index + 2].is_ascii_hexdigit()
-            {
-                return false;
-            }
-            index += 3;
-        } else {
-            index += 1;
-        }
-    }
-    true
-}
-
 #[cfg(test)]
 mod tests {
     use super::{
-        MPRIS_PLAYER_INTERFACE, file_url_to_path, is_mpris_owner_change,
-        is_relevant_properties_change, snapshot_has_changed,
+        MPRIS_PLAYER_INTERFACE, is_mpris_owner_change, is_relevant_properties_change,
+        snapshot_has_changed,
     };
     use crate::model::MediaSnapshot;
     use dbus::arg::{PropMap, Variant};
-    use std::path::PathBuf;
 
     fn changed_properties(names: &[&str]) -> PropMap {
         names
@@ -438,36 +412,5 @@ mod tests {
 
         assert!(snapshot_has_changed(&None, &snapshot));
         assert!(!snapshot_has_changed(&Some(snapshot.clone()), &snapshot));
-    }
-
-    #[test]
-    fn parses_local_file_urls() {
-        assert_eq!(
-            file_url_to_path("file:///home/user/Music/Album%20Art.png"),
-            Some(PathBuf::from("/home/user/Music/Album Art.png"))
-        );
-        assert_eq!(
-            file_url_to_path("file://localhost/home/user/M%C3%BAsica.png"),
-            Some(PathBuf::from("/home/user/Música.png"))
-        );
-    }
-
-    #[test]
-    fn parses_unescaped_unicode_file_urls() {
-        assert_eq!(
-            file_url_to_path("file:///home/user/Música/Portada.png"),
-            Some(PathBuf::from("/home/user/Música/Portada.png"))
-        );
-    }
-
-    #[test]
-    fn rejects_remote_non_file_and_malformed_urls() {
-        assert_eq!(file_url_to_path("https://example.com/cover.png"), None);
-        assert_eq!(
-            file_url_to_path("file://example.com/home/user/cover.png"),
-            None
-        );
-        assert_eq!(file_url_to_path("file:///home/user/bad%2.png"), None);
-        assert_eq!(file_url_to_path("file:///home/user/bad%ZZ.png"), None);
     }
 }

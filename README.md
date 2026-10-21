@@ -8,6 +8,10 @@ It displays:
 - Configurable Previous, Play/Pause, and Next controls in the panel
 - Album-color inspired panel button styling
 
+Album art is read from the cover URL each player publishes. Remote covers (for
+example from Spotify) are downloaded, which is why the Flatpak requests network
+access.
+
 ![screenshot of the applet](./res/screenshot-1.png)
 ![screenshot of the applet 2](./res/screenshot-2.png)
 

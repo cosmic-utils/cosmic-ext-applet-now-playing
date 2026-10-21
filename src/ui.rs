@@ -50,7 +50,7 @@ pub fn panel<'a>(core: &Core, model: &'a AppModel) -> Element<'a, Message> {
             .ellipsize(Ellipsize::End(EllipsizeHeightLimit::Lines(1))),
     );
 
-    let album_color = model.album_color;
+    let album_color = model.album_color();
     let button = button::custom(content)
         .width(Length::Shrink)
         .height(Length::Shrink)
@@ -120,7 +120,7 @@ fn main_popup<'a>(core: &Core, model: &'a AppModel) -> Element<'a, Message> {
             Message::ShowSettings,
         ));
 
-    let artwork = model.now_playing.album_art_path.as_ref().map_or_else(
+    let artwork = model.artwork().map_or_else(
         || {
             icon::from_name("audio-x-generic-symbolic")
                 .size(artwork_size)
@@ -129,8 +129,8 @@ fn main_popup<'a>(core: &Core, model: &'a AppModel) -> Element<'a, Message> {
                 .width(Length::Fixed(f32::from(artwork_size)))
                 .content_fit(ContentFit::Contain)
         },
-        |path| {
-            icon::icon(icon::from_path(path.clone()))
+        |handle| {
+            icon::icon(handle.clone())
                 .height(Length::Fixed(f32::from(artwork_size)))
                 .width(Length::Fixed(f32::from(artwork_size)))
                 .content_fit(ContentFit::Contain)
