@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock, mpsc as std_mpsc};
 use std::thread;
 use std::time::Duration;
 
@@ -55,9 +55,48 @@ pub fn subscription() -> Subscription<MediaSnapshot> {
     Subscription::run(monitor)
 }
 
-pub fn run_command(selected_player: Option<&str>, command: MediaCommand) -> Result<(), String> {
-    let selected_player =
-        selected_player.ok_or_else(|| "no media player is selected".to_owned())?;
+type CommandRequest = (String, MediaCommand);
+
+static COMMAND_QUEUE: OnceLock<std_mpsc::Sender<CommandRequest>> = OnceLock::new();
+
+/// Queues a command for the selected player without blocking the caller.
+///
+/// Commands run in order on a dedicated thread, because slow players can take
+/// a while to answer over D-Bus.
+pub fn enqueue_command(selected_player: Option<&str>, command: MediaCommand) {
+    let Some(selected_player) = selected_player else {
+        eprintln!("no media player is selected");
+        return;
+    };
+
+    let queue = COMMAND_QUEUE.get_or_init(spawn_command_worker);
+    if queue.send((selected_player.to_owned(), command)).is_err() {
+        eprintln!("unable to run MPRIS command {command:?}: command worker is not running");
+    }
+}
+
+fn spawn_command_worker() -> std_mpsc::Sender<CommandRequest> {
+    let (sender, receiver) = std_mpsc::channel();
+    if let Err(error) = thread::Builder::new()
+        .name("media-commands".to_owned())
+        .spawn(move || command_loop(&receiver))
+    {
+        eprintln!("unable to start MPRIS command worker: {error}");
+    }
+    sender
+}
+
+fn command_loop(receiver: &std_mpsc::Receiver<CommandRequest>) {
+    for (selected_player, command) in receiver {
+        if let Err(error) = run_command(&selected_player, command) {
+            eprintln!("{error}");
+        }
+    }
+}
+
+// A fresh connection per command: reusing one PlayerFinder made back-to-back
+// commands to slow players time out.
+fn run_command(selected_player: &str, command: MediaCommand) -> Result<(), String> {
     let finder =
         PlayerFinder::new().map_err(|error| format!("unable to connect to MPRIS: {error}"))?;
     let players = finder

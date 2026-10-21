@@ -164,9 +164,7 @@ impl Window {
     }
 
     fn run_media_command(&self, command: MediaCommand) {
-        if let Err(error) = media::run_command(self.model.selected_player.as_deref(), command) {
-            eprintln!("{error}");
-        }
+        media::enqueue_command(self.model.selected_player.as_deref(), command);
     }
 
     fn save_settings(&self) {
