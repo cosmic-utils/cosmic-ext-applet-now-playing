@@ -11,7 +11,7 @@ use dbus::arg::PropMap;
 use dbus::blocking::Connection;
 use dbus::blocking::stdintf::org_freedesktop_dbus::PropertiesPropertiesChanged;
 use dbus::message::MatchRule;
-use mpris::{PlaybackStatus, PlayerFinder};
+use mpris::{PlaybackStatus, PlayerFinder, TrackID};
 use url::Url;
 
 use crate::fl;
@@ -290,7 +290,7 @@ fn now_playing(player: &mpris::Player) -> NowPlayingData {
         };
     };
 
-    if metadata.is_empty() {
+    if metadata.is_empty() || metadata.track_id() == Some(TrackID::no_track()) {
         return NowPlayingData {
             state,
             ..NowPlayingData::nothing_playing()
