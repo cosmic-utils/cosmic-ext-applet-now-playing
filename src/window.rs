@@ -1,6 +1,7 @@
 use cosmic::app::Core;
 use cosmic::iced::{Limits, Subscription, window, window::Id};
 use cosmic::surface::action::{app_popup, destroy_popup};
+use cosmic::surface::surface_task;
 use cosmic::{Action, Element, Task};
 
 use crate::artwork::{self, ArtworkCache, DownloadCompletion, Resolution};
@@ -240,10 +241,4 @@ fn artwork_download_task(request: artwork::DownloadRequest) -> Task<Action<Messa
         },
         |completion| cosmic::Action::App(Message::ArtworkLoaded(completion)),
     )
-}
-
-fn surface_task(action: cosmic::surface::Action) -> Task<Action<Message>> {
-    cosmic::task::message(cosmic::Action::Cosmic(cosmic::app::Action::Surface(
-        action,
-    )))
 }

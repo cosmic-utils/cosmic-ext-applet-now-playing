@@ -1,6 +1,6 @@
 [package]
 name = "cosmic-ext-applet-now-playing"
-version = "0.2.1"
+version = "0.2.2"
 edition = "2024"
 license = "GPL-3.0"
 rust-version = "1.93"
@@ -8,15 +8,17 @@ rust-version = "1.93"
 [dependencies]
 dbus = "0.9.12"
 i18n-embed-fl = "0.10.1"
-rust-embed = "8.12.0"
+rust-embed = "8.14.0"
 mpris = "2.1.0"
 image = { version = "0.25.10", default-features = false, features = ["jpeg", "png", "webp"] }
-dirs = "6.0.0"
-url = "2.5.8"
+dirs = "7.0.0"
+url = "2.5.9"
 tempfile = "3.27.0"
-ureq = { version = "3.1.4", default-features = false, features = ["rustls"] }
+ureq = { version = "3.5.2", default-features = false, features = ["rustls"] }
 
 [dependencies.libcosmic]
+# Cargo.lock tracks 430f3d48a97d8779f9c1985473912e594ccca1ae (COSMIC Epoch 1.11.0).
+# Keep this source shared with cosmic-panel-config to avoid duplicate config types.
 git = "https://github.com/pop-os/libcosmic.git"
 default-features = false
 features = ["a11y", "applet", "wayland"]

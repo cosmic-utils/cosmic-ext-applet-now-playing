@@ -54,6 +54,19 @@
     </screenshot>
   </screenshots>
   <releases>
+    <release version="0.2.2" date="2026-11-24">
+      <description>
+        <ul>
+          <li>Added support for remote album artwork, including Spotify</li>
+          <li>Added Polish localization</li>
+          <li>Improved playback control responsiveness</li>
+          <li>Fixed incorrect track information when nothing is playing</li>
+          <li>Improved theme styling for neutral and transparent album covers</li>
+          <li>Updated compatibility with COSMIC Epoch 1.11.0</li>
+          <li>Updated the Flatpak runtime to Freedesktop 26.08</li>
+        </ul>
+      </description>
+    </release>
     <release version="0.2.1" date="2026-09-01">
       <description>
         <ul>
