@@ -1,4 +1,3 @@
-use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::thread;
@@ -15,7 +14,7 @@ use mpris::{PlaybackStatus, PlayerFinder};
 use url::Url;
 
 use crate::fl;
-use crate::model::{MediaSnapshot, NowPlayingData, PlaybackState, PlayerInfo};
+use crate::model::{ArtworkSource, MediaSnapshot, NowPlayingData, PlaybackState, PlayerInfo};
 
 const LISTENER_WAKE_INTERVAL: Duration = Duration::from_secs(1);
 const RECONNECT_INTERVAL: Duration = Duration::from_secs(1);
@@ -310,7 +309,7 @@ fn now_playing(player: &mpris::Player) -> NowPlayingData {
         title,
         artist,
         state,
-        album_art_path: metadata.art_url().and_then(file_url_to_path),
+        artwork_source: metadata.art_url().and_then(artwork_source),
         has_usable_metadata: true,
     }
 }
@@ -324,12 +323,17 @@ fn playback_state(player: &mpris::Player) -> PlaybackState {
     }
 }
 
-fn file_url_to_path(value: &str) -> Option<PathBuf> {
+fn artwork_source(value: &str) -> Option<ArtworkSource> {
     if !has_valid_percent_encoding(value) {
         return None;
     }
 
-    Url::parse(value).ok()?.to_file_path().ok()
+    let url = Url::parse(value).ok()?;
+    match url.scheme() {
+        "file" => url.to_file_path().ok().map(ArtworkSource::Local),
+        "http" | "https" => Some(ArtworkSource::Remote(url.into())),
+        _ => None,
+    }
 }
 
 fn has_valid_percent_encoding(value: &str) -> bool {
@@ -354,10 +358,10 @@ fn has_valid_percent_encoding(value: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use super::{
-        MPRIS_PLAYER_INTERFACE, file_url_to_path, is_mpris_owner_change,
+        MPRIS_PLAYER_INTERFACE, artwork_source, is_mpris_owner_change,
         is_relevant_properties_change, snapshot_has_changed,
     };
-    use crate::model::MediaSnapshot;
+    use crate::model::{ArtworkSource, MediaSnapshot};
     use dbus::arg::{PropMap, Variant};
     use std::path::PathBuf;
 
@@ -443,31 +447,65 @@ mod tests {
     #[test]
     fn parses_local_file_urls() {
         assert_eq!(
-            file_url_to_path("file:///home/user/Music/Album%20Art.png"),
-            Some(PathBuf::from("/home/user/Music/Album Art.png"))
+            artwork_source("file:///home/user/Music/Album%20Art.png"),
+            Some(ArtworkSource::Local(PathBuf::from(
+                "/home/user/Music/Album Art.png"
+            )))
         );
         assert_eq!(
-            file_url_to_path("file://localhost/home/user/M%C3%BAsica.png"),
-            Some(PathBuf::from("/home/user/Música.png"))
+            artwork_source("file://localhost/home/user/M%C3%BAsica.png"),
+            Some(ArtworkSource::Local(PathBuf::from(
+                "/home/user/Música.png"
+            )))
         );
     }
 
     #[test]
     fn parses_unescaped_unicode_file_urls() {
         assert_eq!(
-            file_url_to_path("file:///home/user/Música/Portada.png"),
-            Some(PathBuf::from("/home/user/Música/Portada.png"))
+            artwork_source("file:///home/user/Música/Portada.png"),
+            Some(ArtworkSource::Local(PathBuf::from(
+                "/home/user/Música/Portada.png"
+            )))
         );
     }
 
     #[test]
-    fn rejects_remote_non_file_and_malformed_urls() {
-        assert_eq!(file_url_to_path("https://example.com/cover.png"), None);
+    fn rejects_non_local_and_malformed_file_urls() {
         assert_eq!(
-            file_url_to_path("file://example.com/home/user/cover.png"),
+            artwork_source("file://example.com/home/user/cover.png"),
             None
         );
-        assert_eq!(file_url_to_path("file:///home/user/bad%2.png"), None);
-        assert_eq!(file_url_to_path("file:///home/user/bad%ZZ.png"), None);
+        assert_eq!(artwork_source("file:///home/user/bad%2.png"), None);
+        assert_eq!(artwork_source("file:///home/user/bad%ZZ.png"), None);
+    }
+
+    #[test]
+    fn parses_supported_artwork_sources() {
+        assert_eq!(
+            artwork_source("file:///home/user/Music/Album%20Art.png"),
+            Some(ArtworkSource::Local(PathBuf::from(
+                "/home/user/Music/Album Art.png"
+            )))
+        );
+        assert_eq!(
+            artwork_source("https://example.com/cover%20art.png"),
+            Some(ArtworkSource::Remote(
+                "https://example.com/cover%20art.png".to_owned()
+            ))
+        );
+        assert_eq!(
+            artwork_source("http://example.com/cover.png"),
+            Some(ArtworkSource::Remote(
+                "http://example.com/cover.png".to_owned()
+            ))
+        );
+    }
+
+    #[test]
+    fn rejects_unsupported_and_malformed_artwork_sources() {
+        assert_eq!(artwork_source("ftp://example.com/cover.png"), None);
+        assert_eq!(artwork_source("https://example.com/bad%ZZ.png"), None);
+        assert_eq!(artwork_source("not a URL"), None);
     }
 }

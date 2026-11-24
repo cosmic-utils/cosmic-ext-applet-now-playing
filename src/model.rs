@@ -6,6 +6,12 @@ use crate::album_color::dominant_album_color;
 use crate::fl;
 use crate::settings::AppSettings;
 
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum ArtworkSource {
+    Local(PathBuf),
+    Remote(String),
+}
+
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub enum PlaybackState {
     Playing,
@@ -21,7 +27,7 @@ pub struct NowPlayingData {
     pub title: String,
     pub artist: String,
     pub state: PlaybackState,
-    pub album_art_path: Option<PathBuf>,
+    pub artwork_source: Option<ArtworkSource>,
     pub has_usable_metadata: bool,
 }
 
@@ -33,7 +39,7 @@ impl NowPlayingData {
             title: fl!("nothing-playing"),
             artist: String::new(),
             state: PlaybackState::Stopped,
-            album_art_path: None,
+            artwork_source: None,
             has_usable_metadata: false,
         }
     }
@@ -78,6 +84,7 @@ pub struct AppModel {
     pub popup_page: PopupPage,
     pub settings: AppSettings,
     pub album_color: Option<Color>,
+    pub album_art_path: Option<PathBuf>,
 }
 
 impl AppModel {
@@ -90,6 +97,7 @@ impl AppModel {
             popup_page: PopupPage::Main,
             settings,
             album_color: None,
+            album_art_path: None,
         };
         model.apply_snapshot(snapshot);
         model
@@ -139,6 +147,24 @@ impl AppModel {
     }
 
     #[must_use]
+    pub fn artwork_source(&self) -> Option<&ArtworkSource> {
+        self.now_playing.artwork_source.as_ref()
+    }
+
+    pub fn apply_remote_artwork(&mut self, url: &str, path: PathBuf) -> bool {
+        if !matches!(
+            self.artwork_source(),
+            Some(ArtworkSource::Remote(current_url)) if current_url == url
+        ) {
+            return false;
+        }
+
+        self.album_art_path = Some(path);
+        self.refresh_album_color();
+        true
+    }
+
+    #[must_use]
     pub fn has_active_media(&self) -> bool {
         self.now_playing.has_usable_metadata
     }
@@ -151,13 +177,16 @@ impl AppModel {
             .map_or_else(NowPlayingData::nothing_playing, |player| {
                 player.now_playing.clone()
             });
+        self.album_art_path = match self.artwork_source() {
+            Some(ArtworkSource::Local(path)) => Some(path.clone()),
+            Some(ArtworkSource::Remote(_)) | None => None,
+        };
         self.refresh_album_color();
     }
 
     fn refresh_album_color(&mut self) {
         self.album_color = if self.settings.album_color_enabled {
-            self.now_playing
-                .album_art_path
+            self.album_art_path
                 .as_deref()
                 .and_then(dominant_album_color)
         } else {
@@ -191,7 +220,7 @@ mod tests {
                 title: id.to_owned(),
                 artist: "Artist".to_owned(),
                 state,
-                album_art_path: None,
+                artwork_source: None,
                 has_usable_metadata: has_metadata,
             },
         }
@@ -268,5 +297,59 @@ mod tests {
         assert_eq!(model.popup_page, PopupPage::Settings);
         model.set_popup_page(PopupPage::Main);
         assert_eq!(model.popup_page, PopupPage::Main);
+    }
+
+    #[test]
+    fn applies_only_artwork_for_the_current_remote_source() {
+        let mut remote_player = player("remote", PlaybackState::Playing, true);
+        remote_player.now_playing.artwork_source = Some(ArtworkSource::Remote(
+            "https://example.com/current.png".to_owned(),
+        ));
+        let mut model = AppModel::new(AppSettings::default(), snapshot(vec![remote_player]));
+
+        assert!(!model.apply_remote_artwork(
+            "https://example.com/stale.png",
+            PathBuf::from("/tmp/stale.png"),
+        ));
+        assert_eq!(model.album_art_path, None);
+        assert!(model.apply_remote_artwork(
+            "https://example.com/current.png",
+            PathBuf::from("/tmp/current.png"),
+        ));
+        assert_eq!(
+            model.album_art_path,
+            Some(PathBuf::from("/tmp/current.png"))
+        );
+    }
+
+    #[test]
+    fn local_artwork_is_immediately_renderable() {
+        let mut local_player = player("local", PlaybackState::Playing, true);
+        local_player.now_playing.artwork_source = Some(ArtworkSource::Local(PathBuf::from(
+            "/music/cover.png",
+        )));
+
+        let model = AppModel::new(AppSettings::default(), snapshot(vec![local_player]));
+        assert_eq!(
+            model.album_art_path,
+            Some(PathBuf::from("/music/cover.png"))
+        );
+    }
+
+    #[test]
+    fn resolved_remote_artwork_refreshes_album_color() {
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("cover.png");
+        image::RgbaImage::from_pixel(4, 4, image::Rgba([220, 30, 30, 255]))
+            .save(&path)
+            .unwrap();
+        let url = "https://example.com/cover.png";
+        let mut remote_player = player("remote", PlaybackState::Playing, true);
+        remote_player.now_playing.artwork_source =
+            Some(ArtworkSource::Remote(url.to_owned()));
+        let mut model = AppModel::new(AppSettings::default(), snapshot(vec![remote_player]));
+
+        assert!(model.apply_remote_artwork(url, path));
+        assert!(model.album_color.is_some());
     }
 }

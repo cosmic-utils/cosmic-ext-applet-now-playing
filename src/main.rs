@@ -1,4 +1,5 @@
 mod album_color;
+mod artwork;
 mod i18n;
 mod media;
 mod model;

@@ -13,6 +13,8 @@ mpris = "2.1.0"
 image = { version = "0.25.10", default-features = false, features = ["jpeg", "png", "webp"] }
 dirs = "6.0.0"
 url = "2.5.8"
+tempfile = "3.27.0"
+ureq = { version = "3.1.4", default-features = false, features = ["rustls"] }
 
 [dependencies.libcosmic]
 git = "https://github.com/pop-os/libcosmic.git"
@@ -22,9 +24,6 @@ features = ["a11y", "applet", "wayland"]
 [dependencies.i18n-embed]
 version = "0.16"
 features = ["fluent-system", "desktop-requester"]
-
-[dev-dependencies]
-tempfile = "3.27.0"
 
 # Uncomment to test a locally-cloned libcosmic
 # [patch.'https://github.com/pop-os/libcosmic']

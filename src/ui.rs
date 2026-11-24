@@ -120,7 +120,7 @@ fn main_popup<'a>(core: &Core, model: &'a AppModel) -> Element<'a, Message> {
             Message::ShowSettings,
         ));
 
-    let artwork = model.now_playing.album_art_path.as_ref().map_or_else(
+    let artwork = model.album_art_path.as_ref().map_or_else(
         || {
             icon::from_name("audio-x-generic-symbolic")
                 .size(artwork_size)

@@ -3,8 +3,9 @@ use cosmic::iced::{Limits, Subscription, window, window::Id};
 use cosmic::surface::action::{app_popup, destroy_popup};
 use cosmic::{Action, Element, Task};
 
+use crate::artwork::{self, ArtworkCache, DownloadCompletion, Resolution};
 use crate::media::{self, MediaCommand};
-use crate::model::{AppModel, MediaSnapshot, PopupPage};
+use crate::model::{AppModel, ArtworkSource, MediaSnapshot, PopupPage};
 use crate::{settings, ui};
 
 const ID: &str = "com.github.DiegoMMR.CosmicExtAppletNowPlaying";
@@ -13,6 +14,7 @@ pub struct Window {
     core: Core,
     popup: Option<Id>,
     model: AppModel,
+    artwork_cache: Option<ArtworkCache>,
 }
 
 #[derive(Clone, Debug)]
@@ -28,6 +30,7 @@ pub enum Message {
     SelectPlayer(String),
     PopupClosed(Id),
     MediaChanged(MediaSnapshot),
+    ArtworkLoaded(DownloadCompletion),
     PreviousTrack,
     TogglePlayPause,
     NextTrack,
@@ -49,14 +52,21 @@ impl cosmic::Application for Window {
 
     fn init(core: Core, _flags: Self::Flags) -> (Self, Task<Action<Self::Message>>) {
         let model = AppModel::new(settings::load(), media::initial_snapshot());
-        (
-            Self {
-                core,
-                popup: None,
-                model,
-            },
-            Task::none(),
-        )
+        let artwork_cache = match ArtworkCache::new() {
+            Ok(cache) => Some(cache),
+            Err(error) => {
+                eprintln!("{error}");
+                None
+            }
+        };
+        let mut window = Self {
+            core,
+            popup: None,
+            model,
+            artwork_cache,
+        };
+        let task = window.resolve_artwork();
+        (window, task)
     }
 
     fn on_close_requested(&self, id: window::Id) -> Option<Message> {
@@ -88,6 +98,7 @@ impl cosmic::Application for Window {
             Message::SelectPlayer(id) => {
                 self.model.select_player(id);
                 self.model.set_popup_page(PopupPage::Main);
+                return self.resolve_artwork();
             }
             Message::PopupClosed(id) => {
                 if self.popup == Some(id) {
@@ -103,6 +114,10 @@ impl cosmic::Application for Window {
                     self.model.set_popup_page(PopupPage::Main);
                     return surface_task(destroy_popup(popup));
                 }
+                return self.resolve_artwork();
+            }
+            Message::ArtworkLoaded(completion) => {
+                self.finish_artwork_download(completion);
             }
             Message::PreviousTrack => self.run_media_command(MediaCommand::Previous),
             Message::TogglePlayPause => {
@@ -128,6 +143,41 @@ impl cosmic::Application for Window {
 }
 
 impl Window {
+    fn resolve_artwork(&mut self) -> Task<Action<Message>> {
+        let Some(ArtworkSource::Remote(url)) = self.model.artwork_source().cloned() else {
+            return Task::none();
+        };
+        let Some(cache) = self.artwork_cache.as_mut() else {
+            return Task::none();
+        };
+
+        match cache.resolve(&url) {
+            Resolution::Cached(path) => {
+                self.model.apply_remote_artwork(&url, path);
+                Task::none()
+            }
+            Resolution::Pending => Task::none(),
+            Resolution::Download(request) => artwork_download_task(request),
+        }
+    }
+
+    fn finish_artwork_download(&mut self, completion: DownloadCompletion) {
+        let is_current = matches!(
+            self.model.artwork_source(),
+            Some(ArtworkSource::Remote(url)) if url == &completion.url
+        );
+        if let Err(error) = &completion.result {
+            eprintln!("unable to load remote artwork {}: {error}", completion.url);
+        }
+
+        let Some(cache) = self.artwork_cache.as_mut() else {
+            return;
+        };
+        if let Some(path) = cache.complete(&completion, is_current) {
+            self.model.apply_remote_artwork(&completion.url, path);
+        }
+    }
+
     fn toggle_popup(&mut self) -> Task<Action<Message>> {
         if let Some(popup) = self.popup.take() {
             self.model.set_popup_page(PopupPage::Main);
@@ -174,6 +224,24 @@ impl Window {
             eprintln!("unable to save settings: {error}");
         }
     }
+}
+
+fn artwork_download_task(request: artwork::DownloadRequest) -> Task<Action<Message>> {
+    let failed_url = request.url.clone();
+    let (sender, receiver) = cosmic::iced::futures::channel::oneshot::channel();
+    std::thread::spawn(move || {
+        let _ = sender.send(artwork::download(request));
+    });
+
+    Task::perform(
+        async move {
+            receiver.await.unwrap_or_else(|_| DownloadCompletion {
+                url: failed_url,
+                result: Err("artwork worker stopped unexpectedly".to_owned()),
+            })
+        },
+        |completion| cosmic::Action::App(Message::ArtworkLoaded(completion)),
+    )
 }
 
 fn surface_task(action: cosmic::surface::Action) -> Task<Action<Message>> {
