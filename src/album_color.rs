@@ -131,8 +131,9 @@ pub fn dominant_album_color(path: &Path) -> Option<Color> {
         total_weight += weight;
     }
 
+    // Grey or transparent covers have no colour to use; keep the theme's style.
     if total_weight <= f32::EPSILON {
-        return Some(Color::WHITE);
+        return None;
     }
 
     let r = byte_value_to_u8(sum_r / total_weight);
@@ -156,22 +157,24 @@ mod tests {
     use image::{Rgba, RgbaImage};
     use tempfile::tempdir;
 
-    fn color_from_image(pixel: Rgba<u8>) -> Color {
+    fn color_from_image(pixel: Rgba<u8>) -> Option<Color> {
         let directory = tempdir().unwrap();
         let path = directory.path().join("cover.png");
         RgbaImage::from_pixel(4, 4, pixel).save(&path).unwrap();
-        dominant_album_color(&path).unwrap()
+        dominant_album_color(&path)
     }
 
     #[test]
-    fn transparent_and_neutral_images_fall_back_to_white() {
-        assert_eq!(color_from_image(Rgba([200, 20, 20, 0])), Color::WHITE);
-        assert_eq!(color_from_image(Rgba([128, 128, 128, 255])), Color::WHITE);
+    fn transparent_and_neutral_images_have_no_album_color() {
+        assert_eq!(color_from_image(Rgba([200, 20, 20, 0])), None);
+        assert_eq!(color_from_image(Rgba([128, 128, 128, 255])), None);
+        assert_eq!(color_from_image(Rgba([0, 0, 0, 255])), None);
+        assert_eq!(color_from_image(Rgba([255, 255, 255, 255])), None);
     }
 
     #[test]
     fn saturated_color_is_preserved_and_normalized() {
-        let color = color_from_image(Rgba([220, 30, 30, 255]));
+        let color = color_from_image(Rgba([220, 30, 30, 255])).unwrap();
 
         assert!(color.r > color.g);
         assert!(color.r > color.b);
@@ -187,7 +190,7 @@ mod tests {
     #[test]
     fn dark_and_light_colors_are_bounded_for_readability() {
         for pixel in [Rgba([80, 0, 0, 255]), Rgba([255, 150, 150, 255])] {
-            let color = color_from_image(pixel);
+            let color = color_from_image(pixel).unwrap();
             let (_, _, lightness) = rgb_to_hsl(
                 channel_to_u8(color.r),
                 channel_to_u8(color.g),
